@@ -16,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.stream.Stream;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -29,7 +31,7 @@ public class ProductController {
     private FileStorageService fileStorageService;
 
     @GetMapping("/")
-    public ResponseEntity<@NotNull ResponseDTO> list(@RequestBody FilterDTO filterDTO) {
+    public ResponseEntity<ResponseDTO<Stream<ProductDTO>>> list(@RequestBody FilterDTO filterDTO) {
         logger.info("Solicitando la lista de todos los productos ...");
         try {
             return ResponseEntity.ok().body(productService.list(filterDTO));
@@ -40,7 +42,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<@NotNull ResponseDTO> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ResponseDTO<ProductDTO>> getProductById(@PathVariable Long id) {
         logger.info("Solicitando el producto con id: {}", id);
         try {
             return ResponseEntity.ok().body(productService.getProductById(id));
@@ -53,7 +55,7 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(value = "/save", consumes = "multipart/form-data")
     public ResponseEntity<@NotNull ResponseDTO> save(@Valid @RequestBody ProductDTO productDTO) {
-        logger.info("Insertando nuevo producto con nombre : {}", productDTO.getName());
+        logger.info("Insertando nuevo producto con nombre : {}", productDTO.getName()); 
         try {
             return ResponseEntity.ok().body(productService.saveProduct(productDTO));
         } catch (Exception e) {

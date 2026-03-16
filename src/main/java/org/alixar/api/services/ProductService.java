@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 public class ProductService {
@@ -34,7 +35,7 @@ public class ProductService {
     @Autowired
     private FileStorageService fileStorageService;
 
-    public ResponseDTO list(FilterDTO filterDTO) {
+    public ResponseDTO<Stream<ProductDTO>> list(FilterDTO filterDTO) {
         try {
             Pageable pageable = PageRequest.of(filterDTO.getPage() - 1, filterDTO.getItemsPerPage(),
                     "desc".equals(filterDTO.getOrderBy()) ? Sort.by(filterDTO.getOrder()).descending() : Sort.by(filterDTO.getOrder()).ascending());
@@ -46,14 +47,14 @@ public class ProductService {
                 products = productRepository.findAll(pageable);
                 filterDTO.setTotalPages((int) Math.ceil((double) productRepository.count() / filterDTO.getItemsPerPage()));
             }
-            return new ResponseDTO(200, "Listado de productos", products.stream().map(productMapper::toDTO), filterDTO);
+            return new ResponseDTO<>(200, "Listado de productos", products.stream().map(productMapper::toDTO), filterDTO);
         } catch (Exception e) {
             logger.error("Error al obtener todos los productos: {}", e.getMessage());
             throw new RuntimeException("Error al obtener todos los productos", e);
         }
     }
 
-    public ResponseDTO getProductById(Long id) {
+    public ResponseDTO<ProductDTO> getProductById(Long id) {
         Optional<ProductDTO> productDTOOpt = Optional.empty();
         try {
             Optional<Product> product = productRepository.findById(id);
@@ -62,10 +63,9 @@ public class ProductService {
             } else {
                 logger.info("No se encontró el producto con id: {}", id);
             }
-            if (productDTOOpt.isPresent()) {
-                return new ResponseDTO(200, "Producto obtenido", productDTOOpt.get());
-            }
-            return new ResponseDTO(404, "No se encontró el producto con id:" + id, null);
+            return productDTOOpt
+                    .map(productDTO -> new ResponseDTO<>(200, "Producto obtenido", productDTO))
+                    .orElseGet(() -> new ResponseDTO<>(404, "No se encontró el producto con id:" + id, null));
         } catch (Exception e) {
             logger.error("Error al buscar el producto: {}", e.getMessage());
             throw new RuntimeException("Error al buscar el producto", e);
