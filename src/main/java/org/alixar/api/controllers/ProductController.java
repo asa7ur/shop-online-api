@@ -23,7 +23,6 @@ public class ProductController {
     private final ProductService productService;
     private final FileStorageService fileStorageService;
 
-    // Cambiado de @RequestBody a @ModelAttribute para peticiones GET estándar
     @GetMapping("/")
     public ResponseEntity<ResponseDTO<List<ProductDTO>>> list(@ModelAttribute FilterDTO filterDTO) {
         List<ProductDTO> data = productService.list(filterDTO);

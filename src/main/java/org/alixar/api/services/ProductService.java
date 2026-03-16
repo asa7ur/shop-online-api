@@ -26,7 +26,6 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final FileStorageService fileStorageService;
 
-    // Ahora devuelve la página de productos y actualiza el filtro por referencia
     public List<ProductDTO> list(FilterDTO filterDTO) {
         Pageable pageable = PageRequest.of(filterDTO.getPage() - 1, filterDTO.getItemsPerPage(),
                 "desc".equals(filterDTO.getOrderBy()) ? Sort.by(filterDTO.getOrder()).descending() : Sort.by(filterDTO.getOrder()).ascending());
