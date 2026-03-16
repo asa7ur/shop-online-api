@@ -23,45 +23,47 @@ public class ProductController {
     private final ProductService productService;
     private final FileStorageService fileStorageService;
 
-    private <T> ResponseEntity<ResponseDTO<T>> buildResponse(ResponseDTO<T> response) {
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-
+    // Cambiado de @RequestBody a @ModelAttribute para peticiones GET estándar
     @GetMapping("/")
-    public ResponseEntity<ResponseDTO<List<ProductDTO>>> list(@RequestBody FilterDTO filterDTO) {
-        return buildResponse(productService.list(filterDTO));
+    public ResponseEntity<ResponseDTO<List<ProductDTO>>> list(@ModelAttribute FilterDTO filterDTO) {
+        List<ProductDTO> data = productService.list(filterDTO);
+        return ResponseEntity.ok(ResponseDTO.success("Listado obtenido", data, filterDTO));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO<ProductDTO>> getProductById(@PathVariable Long id) {
-        return buildResponse(productService.getProductById(id));
+        ProductDTO data = productService.getProductById(id);
+        return ResponseEntity.ok(ResponseDTO.success("Producto obtenido", data));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @PostMapping(value = "/save")
+    @PostMapping("/save")
     public ResponseEntity<ResponseDTO<ProductDTO>> save(@Valid @RequestBody ProductDTO productDTO) {
-        return buildResponse(productService.saveProduct(productDTO));
+        ProductDTO data = productService.saveProduct(productDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseDTO.success("Producto guardado", data));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO<Void>> deleteProduct(@PathVariable Long id) {
-        return buildResponse(productService.deleteProduct(id));
+        productService.deleteProduct(id);
+        return ResponseEntity.ok(ResponseDTO.success("Producto eliminado", null));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(value = "/{id}/upload", consumes = "multipart/form-data")
     public ResponseEntity<ResponseDTO<String>> upload(@PathVariable Long id, @RequestParam("image") MultipartFile image) {
-        return buildResponse(productService.upload(image, id));
+        String filename = productService.upload(image, id);
+        return ResponseEntity.ok(ResponseDTO.success("Imagen actualizada", filename));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}/image")
     public ResponseEntity<ResponseDTO<Void>> deleteProductImage(@PathVariable Long id) {
-        return buildResponse(productService.deleteProductImage(id));
+        productService.deleteProductImage(id);
+        return ResponseEntity.ok(ResponseDTO.success("Imagen eliminada", null));
     }
 
-    // Este método es especial porque devuelve un flujo de archivo, no un JSON estándar
     @PreAuthorize("hasAnyRole('ADMIN')")
     @GetMapping(value = "/{image}/image")
     public ResponseEntity<?> readImage(@PathVariable String image) {

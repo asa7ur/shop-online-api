@@ -3,8 +3,8 @@ package org.alixar.api.services;
 import lombok.RequiredArgsConstructor;
 import org.alixar.api.dtos.FilterDTO;
 import org.alixar.api.dtos.ProductDTO;
-import org.alixar.api.dtos.ResponseDTO;
 import org.alixar.api.entities.Product;
+import org.alixar.api.exceptions.AlreadyExistsException;
 import org.alixar.api.exceptions.ResourceNotFoundException;
 import org.alixar.api.mappers.ProductMapper;
 import org.alixar.api.repositories.ProductRepository;
@@ -23,12 +23,11 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-
     private final ProductMapper productMapper;
-
     private final FileStorageService fileStorageService;
 
-    public ResponseDTO<List<ProductDTO>> list(FilterDTO filterDTO) {
+    // Ahora devuelve la página de productos y actualiza el filtro por referencia
+    public List<ProductDTO> list(FilterDTO filterDTO) {
         Pageable pageable = PageRequest.of(filterDTO.getPage() - 1, filterDTO.getItemsPerPage(),
                 "desc".equals(filterDTO.getOrderBy()) ? Sort.by(filterDTO.getOrder()).descending() : Sort.by(filterDTO.getOrder()).ascending());
 
@@ -38,62 +37,55 @@ public class ProductService {
 
         filterDTO.setTotalPages(products.getTotalPages());
 
-        List<ProductDTO> data = products.getContent().stream()
+        return products.getContent().stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
-
-        return ResponseDTO.success("Listado obtenido", data, filterDTO);
     }
 
-    public ResponseDTO<ProductDTO> getProductById(Long id) {
-        Product product = productRepository.findById(id)
+    public ProductDTO getProductById(Long id) {
+        return productRepository.findById(id)
+                .map(productMapper::toDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto con ID " + id + " no encontrado"));
-
-        return ResponseDTO.success("Producto obtenido", productMapper.toDTO(product));
     }
 
-    public ResponseDTO<ProductDTO> saveProduct(ProductDTO productDTO) {
+    public ProductDTO saveProduct(ProductDTO productDTO) {
         if (productRepository.findByName(productDTO.getName()).isPresent()) {
-            return ResponseDTO.error(409, "El nombre del producto ya existe");
+            throw new AlreadyExistsException("El nombre del producto ya existe");
         }
-
         Product savedProduct = productRepository.save(productMapper.toEntity(productDTO));
-        return ResponseDTO.success("Producto guardado", productMapper.toDTO(savedProduct));
+        return productMapper.toDTO(savedProduct);
     }
 
-    public ResponseDTO<Void> deleteProduct(Long id) {
+    public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            return ResponseDTO.error(404, "No se puede eliminar: el producto no existe");
+            throw new ResourceNotFoundException("No se puede eliminar: el producto no existe");
         }
         productRepository.deleteById(id);
-        return ResponseDTO.success("Producto eliminado", null);
     }
 
-    public ResponseDTO<String> upload(MultipartFile file, Long id) {
+    public String upload(MultipartFile file, Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
         if (file == null || file.isEmpty()) {
-            return ResponseDTO.error(400, "El archivo es obligatorio");
+            throw new IllegalArgumentException("El archivo es obligatorio");
         }
 
         String filename = fileStorageService.saveFile(file);
         product.setImage(filename);
         productRepository.save(product);
 
-        return ResponseDTO.success("Imagen actualizada", filename);
+        return filename;
     }
 
-    public ResponseDTO<Void> deleteProductImage(Long id) {
+    public void deleteProductImage(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
         if (product.getImage() != null) {
             fileStorageService.deleteFile(product.getImage());
             product.setImage(null);
             productRepository.save(product);
         }
-
-        return ResponseDTO.success("Imagen eliminada", null);
     }
 }

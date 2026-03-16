@@ -3,6 +3,7 @@ package org.alixar.api.exceptions;
 import org.alixar.api.dtos.ResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,6 +18,14 @@ public class GlobalExceptionHandler {
                 .body(ResponseDTO.error(404, ex.getMessage()));
     }
 
+    // 409: Conflicto (Recurso ya existe)
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleConflict(AlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ResponseDTO.error(409, ex.getMessage()));
+    }
+
     // 400: Error de lógica o datos inválidos
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ResponseDTO<Void>> handleBadRequest(IllegalArgumentException ex) {
@@ -25,7 +34,15 @@ public class GlobalExceptionHandler {
                 .body(ResponseDTO.error(400, ex.getMessage()));
     }
 
-    // 500: Error genérico (La red de seguridad final)
+    // 400: Errores de validación de Bean Validation (@Valid)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleValidation(MethodArgumentNotValidException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ResponseDTO.error(400, "Error de validación en los datos de entrada"));
+    }
+
+    // 500: Error genérico
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseDTO<Void>> handleGlobal(Exception ex) {
         return ResponseEntity
