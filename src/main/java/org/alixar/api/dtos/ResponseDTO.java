@@ -1,12 +1,14 @@
 package org.alixar.api.dtos;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ResponseDTO<T> {
     private LocalDateTime timestamp;
     private int status;
@@ -14,18 +16,15 @@ public class ResponseDTO<T> {
     private FilterDTO filter;
     private T data;
 
-    public ResponseDTO(int status, String message, T data, FilterDTO filter) {
-        this.timestamp = LocalDateTime.now();
-        this.status = status;
-        this.message = message;
-        this.data = data;
-        this.filter = filter;
+    public static <T> ResponseDTO<T> success(String message, T data) {
+        return new ResponseDTO<>(LocalDateTime.now(), 200, message, null, data);
     }
 
-    public ResponseDTO(int status, String message, T data) {
-        this.timestamp = LocalDateTime.now();
-        this.status = status;
-        this.message = message;
-        this.data = data;
+    public static <T> ResponseDTO<T> success(String message, T data, FilterDTO filter) {
+        return new ResponseDTO<>(LocalDateTime.now(), 200, message, filter, data);
+    }
+
+    public static <T> ResponseDTO<T> error(int status, String message) {
+        return new ResponseDTO<>(LocalDateTime.now(), status, message, null, null);
     }
 }
