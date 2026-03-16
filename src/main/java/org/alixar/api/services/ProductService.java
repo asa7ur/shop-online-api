@@ -72,33 +72,33 @@ public class ProductService {
         }
     }
 
-    public ResponseDTO saveProduct(ProductDTO productDTO) {
+    public ResponseDTO<ProductDTO> saveProduct(ProductDTO productDTO) {
         try {
             if (productRepository.findByName(productDTO.getName()).isPresent()) {
                 logger.warn("Error al insertar un producto");
-                return new ResponseDTO(409, "Error al crear el producto. Ya existe un producto con el mismo nombre.", null);
+                return new ResponseDTO<>(409, "Error al crear el producto. Ya existe un producto con el mismo nombre.", null);
             }
             Product savedProduct = productRepository.save(productMapper.toEntity(productDTO));
             logger.info("Producto creado satisfactoriamente con id: {}", savedProduct.getId());
-            return new ResponseDTO(200, "Producto insertado correctamente", productMapper.toDTO(savedProduct));
+            return new ResponseDTO<>(200, "Producto insertado correctamente", productMapper.toDTO(savedProduct));
         } catch (Exception e) {
             logger.error("Error al crear el producto: {}", e.getMessage());
-            return new ResponseDTO(500, "Error al crear el producto", null);
+            return new ResponseDTO<>(500, "Error al crear el producto", null);
         }
     }
 
-    public ResponseDTO deleteProduct(Long id) {
+    public ResponseDTO<Void> deleteProduct(Long id) {
         try {
             if (productRepository.findById(id).isPresent()) {
                 productRepository.deleteById(id);
                 logger.info("Eliminada el producto con id: {} satisfactoriamente", id);
-                return new ResponseDTO(200, "Producto eliminado correctamente", null);
+                return new ResponseDTO<>(200, "Producto eliminado correctamente", null);
             } else {
-                return new ResponseDTO(500, "Error al eliminar el producto", null);
+                return new ResponseDTO<>(500, "Error al eliminar el producto", null);
             }
         } catch (Exception e) {
             logger.error("Error al eliminar el producto: {}", e.getMessage());
-            return new ResponseDTO(500, "Error al eliminar el producto", null);
+            return new ResponseDTO<>(500, "Error al eliminar el producto", null);
         }
     }
 

@@ -54,7 +54,7 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(value = "/save", consumes = "multipart/form-data")
-    public ResponseEntity<@NotNull ResponseDTO> save(@Valid @RequestBody ProductDTO productDTO) {
+    public ResponseEntity<@NotNull ResponseDTO<ProductDTO>> save(@Valid @RequestBody ProductDTO productDTO) {
         logger.info("Insertando nuevo producto con nombre : {}", productDTO.getName()); 
         try {
             return ResponseEntity.ok().body(productService.saveProduct(productDTO));
@@ -66,7 +66,7 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<@NotNull ResponseDTO> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<@NotNull ResponseDTO<Void>> deleteProduct(@PathVariable Long id) {
         logger.info("Eliminando el producto con id: {}", id);
         return ResponseEntity.ok().body(productService.deleteProduct(id));
     }
